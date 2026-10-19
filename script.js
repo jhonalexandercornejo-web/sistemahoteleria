@@ -5305,17 +5305,34 @@ function cambiarTipoEstadiaCheckIn() {
     calcularCheckIn();
 }
 
+
 function cargarPrecioCheckIn() {
-    const habitacionId = Number(document.getElementById("checkinHabitacion")?.value);
-    const habitacion = habitaciones.find(h => Number(h.id) === habitacionId);
+    const habitacionId = Number(
+        document.getElementById("checkinHabitacion")?.value
+    );
+
+    const habitacion = habitaciones.find(
+        h => Number(h.id) === habitacionId
+    );
+
     const input = document.getElementById("checkinPrecioAplicado");
     if (!input) return;
+
     if (!habitacion) {
         input.value = "";
         return;
     }
+
     const tipo = document.getElementById("checkinTipoEstadia")?.value || "DIA";
-    input.value = Number(tipo === "HORAS" ? habitacion.precioHora : habitacion.precio).toFixed(2);
+
+    if (tipo === "HORAS") {
+        input.value = "";
+    } else {
+        input.value = Number(habitacion.precio || 0).toFixed(2);
+    }
+
+    input.dataset.habitacion = String(habitacionId);
+    input.dataset.tipo = tipo;
 }
 
 abrirCheckInDirecto = function () {
