@@ -2646,8 +2646,11 @@ function guardarCheckInDirecto() {
         return;
     }
 
-    const total =
-        habitacion.precio * noches;
+    
+const tipoEstadia = document.getElementById("checkinTipoEstadia")?.value || "DIA";
+const precioAplicado = Number(document.getElementById("checkinPrecioAplicado")?.value || 0);
+const total = tipoEstadia === "HORAS" ? precioAplicado : precioAplicado * noches;
+
 
     const reserva = {
 
