@@ -5376,8 +5376,9 @@ calcularCheckIn = function (mantenerPrecio = false) {
     }
 
     const precioAplicado = Number(precioInput?.value || 0);
-    document.getElementById("checkinTotal").textContent = dinero(precioAplicado * cantidad);
-
+    document.getElementById("checkinTotal").textContent = dinero(
+    tipo === "HORAS" ? precioAplicado : precioAplicado * cantidad
+);
     const finElemento = document.getElementById("checkinHoraFin");
     if (tipo === "HORAS" && finElemento) {
         const fecha = document.getElementById("checkinEntrada")?.value || obtenerFechaHoy();
