@@ -3907,7 +3907,7 @@ function abrirCuenta(reservaId) {
                 class="btn-secundario"
                 onclick="realizarCheckOut(${reservaId})"
             >
-                Check-out
+                salida
             </button>
 
         </div>
