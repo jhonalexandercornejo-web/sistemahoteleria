@@ -2214,7 +2214,22 @@ function cancelarReserva(id) {
 }
 
 
+// Protección por contraseña para eliminar datos sensibles del sistema.
+const CLAVE_ELIMINACIONES_PROTEGIDAS = "cleiver2026";
+
+function validarClaveEliminacionProtegida() {
+    const clave = prompt("Ingresa la contraseña para confirmar esta eliminación:");
+    if (clave === null) return false;
+    if (clave !== CLAVE_ELIMINACIONES_PROTEGIDAS) {
+        alert("Contraseña incorrecta. No se realizó la eliminación.");
+        return false;
+    }
+    return true;
+}
+
+
 function eliminarReservaDefinitiva(id) {
+    if (!validarClaveEliminacionProtegida()) return;
 
     const reserva =
         reservas.find(
@@ -2850,6 +2865,11 @@ function abrirModalProducto(id = null) {
         "tituloModalProducto"
     ).textContent = "Nuevo producto";
 
+    // Al crear se pueden completar todos los datos; al editar solo el precio.
+    ["nombreProducto", "categoriaProducto", "stockProducto"].forEach(campoId => {
+        document.getElementById(campoId).disabled = false;
+    });
+
     if (id !== null) {
 
         const producto =
@@ -2885,7 +2905,11 @@ function abrirModalProducto(id = null) {
 
         document.getElementById(
             "tituloModalProducto"
-        ).textContent = "Editar producto";
+        ).textContent = "Editar precio del producto";
+
+        ["nombreProducto", "categoriaProducto", "stockProducto"].forEach(campoId => {
+            document.getElementById(campoId).disabled = true;
+        });
     }
 
     abrirModal("modalProducto");
@@ -2958,22 +2982,17 @@ function guardarProducto() {
             return;
         }
 
-        const stockAnterior =
-            producto.stock;
-
-        producto.nombre = nombre;
-        producto.categoria = categoria;
+        const precioAnterior = producto.precio;
         producto.precio = precio;
-        producto.stock = stock;
 
         registrarMovimiento(
-            "PRODUCTO EDITADO",
+            "PRECIO DE PRODUCTO ACTUALIZADO",
             "-",
-            `${nombre}. Stock: ${stockAnterior} → ${stock}. Precio: ${dinero(precio)}.`
+            `${producto.nombre}. Precio: ${dinero(precioAnterior)} → ${dinero(precio)}.`
         );
 
         notificar(
-            "Producto actualizado."
+            "Precio actualizado. Para modificar existencias utiliza Ingresar al almacén."
         );
 
     } else {
@@ -3007,6 +3026,45 @@ function guardarProducto() {
     cerrarModal("modalProducto");
 
     renderTodo();
+}
+
+
+function abrirIngresoStock(id) {
+    const producto = productos.find(p => Number(p.id) === Number(id));
+    if (!producto) return;
+
+    document.getElementById("productoIngresoStockId").value = producto.id;
+    document.getElementById("cantidadIngresoStock").value = "";
+    document.getElementById("nombreProductoIngreso").textContent =
+        `${producto.nombre} · Stock actual: ${producto.stock} unidades`;
+    abrirModal("modalIngresoStock");
+}
+
+
+function registrarIngresoStock() {
+    const id = Number(document.getElementById("productoIngresoStockId").value);
+    const cantidad = Number(document.getElementById("cantidadIngresoStock").value);
+    const producto = productos.find(p => Number(p.id) === id);
+
+    if (!producto) return;
+    if (!Number.isInteger(cantidad) || cantidad <= 0) {
+        notificar("Ingresa una cantidad válida de unidades.");
+        return;
+    }
+
+    const stockAnterior = Number(producto.stock || 0);
+    producto.stock = stockAnterior + cantidad;
+
+    registrarMovimiento(
+        "INGRESO AL ALMACÉN",
+        "-",
+        `${producto.nombre}: ingresaron ${cantidad} unidades. Stock: ${stockAnterior} → ${producto.stock}.`
+    );
+
+    guardarDatos();
+    cerrarModal("modalIngresoStock");
+    renderTodo();
+    notificar(`Ingreso registrado. Nuevo stock de ${producto.nombre}: ${producto.stock} unidades.`);
 }
 
 
@@ -3142,6 +3200,15 @@ function renderProductos() {
                 </td>
 
                 <td>
+
+                    ${Number(p.stock) <= 5 ? `
+                    <button
+                        class="tabla-boton verde"
+                        onclick="abrirIngresoStock(${p.id})"
+                    >
+                        📥 Ingresar al almacén
+                    </button>
+                    ` : ""}
 
                     <button
                         class="tabla-boton azul"
@@ -3630,6 +3697,59 @@ function renderConsumos() {
             `;
 
         }).join("");
+}
+
+
+/* =========================================================
+   ELIMINAR TODOS LOS CONSUMOS
+   Limpia el historial completo y devuelve las cantidades al stock.
+========================================================= */
+function eliminarTodosConsumos() {
+    if (!validarClaveEliminacionProtegida()) return;
+
+    if (!consumos.length) {
+        notificar("No hay consumos para eliminar.");
+        return;
+    }
+
+    const cantidadRegistros = consumos.length;
+    const totalConsumos = consumos.reduce(
+        (total, consumo) => total + Number(consumo.total || 0),
+        0
+    );
+
+    const confirmar = confirm(
+        `¿Estás seguro de eliminar TODOS los consumos?\n\n` +
+        `Se eliminarán ${cantidadRegistros} registros del historial, ` +
+        `se devolverán las cantidades al inventario y los consumos ` +
+        `dejarán de aparecer en las cuentas de las habitaciones.\n\n` +
+        `Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmar) return;
+
+    // Devolver al inventario todas las unidades descontadas por consumos.
+    consumos.forEach(consumo => {
+        const producto = productos.find(
+            p => Number(p.id) === Number(consumo.productoId)
+        );
+
+        if (producto) {
+            producto.stock = Number(producto.stock || 0) + Number(consumo.cantidad || 0);
+        }
+    });
+
+    consumos = [];
+
+    registrarMovimiento(
+        "TODOS LOS CONSUMOS ELIMINADOS",
+        "-",
+        `Se eliminaron ${cantidadRegistros} registros de consumo por un total de ${dinero(totalConsumos)}. Se devolvieron las cantidades al inventario.`
+    );
+
+    guardarDatos();
+    renderTodo();
+    notificar("Se eliminaron todos los consumos y se actualizó el inventario.");
 }
 
 
@@ -5459,7 +5579,7 @@ guardarCheckInDirecto = function () {
     const reserva = {
         id: generarId(reservas), nombre, dni, telefono, habitacionId,
         entrada, salida,
-        total: precioAplicado * cantidad,
+        total: tipoEstadia === "HORAS" ? precioAplicado : precioAplicado * cantidad,
         tipoEstadia,
         cantidadEstadia: cantidad,
         precioAplicado,
@@ -5860,6 +5980,7 @@ function guardarAmpliacionEstadia() {
    No elimina reservas, pagos, consumos ni caja.
 ========================================================= */
 function eliminarHistorialMovimientos() {
+    if (!validarClaveEliminacionProtegida()) return;
     if (!historial.length) return notificar("El historial ya está vacío.");
     if (!confirm("¿Deseas borrar todos los movimientos del historial? No se eliminarán reservas, pagos, consumos ni registros de caja.")) return;
     historial = [];

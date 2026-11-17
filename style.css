@@ -1070,28 +1070,38 @@ tbody tr:hover {
 }
 
 .comprobante-encabezado h2 {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
+    font-size: 21px;
+    letter-spacing: .3px;
 }
 
 .comprobante-encabezado p {
-    color: #64748b;
+    color: #475569;
     font-size: 11px;
+    line-height: 1.4;
 }
 
 .comprobante-dato {
     display: flex;
     justify-content: space-between;
+    gap: 12px;
     padding: 6px 0;
-    font-size: 12px;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.comprobante-dato strong {
+    font-size: 13px;
+    text-align: right;
 }
 
 .comprobante-total {
     display: flex;
     justify-content: space-between;
-    margin-top: 15px;
-    padding-top: 12px;
+    margin-top: 13px;
+    padding-top: 10px;
     border-top: 1px dashed #94a3b8;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: bold;
 }
 
@@ -1184,12 +1194,29 @@ tbody tr:hover {
 
     #modalComprobante .modal-contenido {
         width: 100%;
-        max-width: 420px;
+        max-width: 460px;
         margin: 0 auto;
         padding: 20px;
         box-shadow: none;
         border: none;
         overflow: visible;
+    }
+
+    #modalComprobante.comprobante-encabezado h2 {
+        font-size: 21px;
+    }
+
+    #modalComprobante .comprobante-encabezado p {
+        font-size: 11px;
+    }
+
+    #modalComprobante .comprobante-dato,
+    #modalComprobante .comprobante-dato strong {
+        font-size: 13px;
+    }
+
+    #modalComprobante .comprobante-total {
+        font-size: 19px;
     }
 
     .no-imprimir {
